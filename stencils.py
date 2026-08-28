@@ -19,18 +19,21 @@ def fix_ordering_constraint(
     dp_layers: dict,
     broken: list
 ):
-    new_t = 1 + max(t for checks in dp_layers.values() for t in checks.values())
-    used_d, used_check = set(), set()
-    for x, z, I, S in broken:
-        d = I[0]
-        check = x if dp_layers[d][x] < dp_layers[d][z] else z
-        if d in used_d or check in used_check:
-            new_t += 1
-            used_d, used_check = set(), set()
-        dp_layers[d][check] = new_t
-        used_d.add(d)
-        used_check.add(check)
+    for x, z, I, _S in broken:
+        d = min(I, key=lambda q: distance_between_checks(dp_layers, q, x, z))
+        early, late = (x, z) if dp_layers[d][x] < dp_layers[d][z] else (z, x)
+        t = dp_layers[d][late]
+        for checks in dp_layers.values():
+            for v in checks:
+                if checks[v] > t:
+                    checks[v] += 1
+        dp_layers[d][early] = t + 1
     return dp_layers
+
+
+def distance_between_checks(dp_layers, d, x, z):
+    order = sorted(dp_layers[d], key=dp_layers[d].get)
+    return abs(order.index(x) - order.index(z)) - 1
 
 
 def layers_from_dp(dp_layers):

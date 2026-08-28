@@ -1,5 +1,6 @@
-from algorithms import hopcroft_karp_algorithm, edge_color_hk
-from graphs import complete_graph, steane_graph
+from edge_coloring import edge_color_max, edge_color_regular
+from graphs import complete_graph, steane_graph, toric_graph
+from maximum_matching import hopcroft_karp_algorithm
 from stencils import (
     check_ordering_constraint,
     fix_ordering_constraint,
@@ -12,6 +13,7 @@ def test_is_bipartite():
     assert complete_graph(2, 3, 5).is_bipartite()
     assert complete_graph(100, 100, 100).is_bipartite()
     assert steane_graph().is_bipartite()
+    assert toric_graph(3).is_bipartite()
 
 
 def test_hopcroft_karp_algorithm():
@@ -28,9 +30,9 @@ def test_hopcroft_karp_algorithm():
     assert layer == 6
 
 
-def test_edge_color_hk():
+def test_edge_color_regular():
     def n_layers(graph):
-        dp = edge_color_hk(graph)
+        dp = edge_color_regular(graph)
         return 1 + max(t for checks in dp.values() for t in checks.values())
 
     assert n_layers(complete_graph(1, 1, 10)) == 10
@@ -83,16 +85,22 @@ def test_fix_ordering_constraint_handmade():
 
 
 def test_fix_ordering_constraint_after_coloring():
-    for graph in (
-        complete_graph(1, 1, 2),
-        complete_graph(1, 1, 4),
-        complete_graph(1, 3, 4),
-        complete_graph(2, 2, 4),
-    ):
-        dp = edge_color_hk(graph)
-        dp = fix_ordering_constraint(dp, check_ordering_constraint(dp))
-        assert check_ordering_constraint(dp) == []
-        _assert_layers_are_matchings(dp)
+    for color in (edge_color_max, edge_color_regular):
+        for graph in (
+            complete_graph(1, 1, 2),
+            complete_graph(1, 1, 4),
+            complete_graph(1, 3, 4),
+            complete_graph(2, 2, 4),
+            steane_graph(),
+        ):
+            dp = color(graph)
+            for _ in range(5):
+                broken = check_ordering_constraint(dp)
+                if not broken:
+                    break
+                dp = fix_ordering_constraint(dp, broken)
+            assert check_ordering_constraint(dp) == []
+            _assert_layers_are_matchings(dp)
 
 
 def test_layers_from_dp():

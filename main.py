@@ -1,32 +1,11 @@
-from bipartite_g import BipartiteGraph
-from algorithms import edge_color_hk
+from edge_coloring import edge_color_max, edge_color_regular
 import time
-from graphs import complete_args
+from graphs import complete_graph, steane_graph
 from stencils import check_ordering_constraint, fix_ordering_constraint, layers_from_dp, check_no_layer_contains_two_incident_edges
 
 
-def initialize_graph(nx: int, nz: int, n: int, edges_x: list, edges_z: list):
-    """Seed X and Z Tanner graphs with n data qubits and a matching of checks."""
-    Tanner_graph = BipartiteGraph()
-
-    all_data = [(i, "D") for i in range(n)]
-    all_x = [(i, "X") for i in range(nx)]
-    all_z = [(i, "Z") for i in range(nz)]
-
-    Tanner_graph.add_vertices(all_x, "ancilla")
-    Tanner_graph.add_vertices(all_z, "ancilla")
-    Tanner_graph.add_vertices(all_data, "data")
-
-    for i, j in edges_x:
-        Tanner_graph.add_edge((i, "X"), (j, "D"))
-
-    for i, j in edges_z:
-        Tanner_graph.add_edge((i, "Z"), (j, "D"))
-
-    return Tanner_graph
-
 def __main__():
-    Tanner_graph = initialize_graph(*complete_args(1, 1, 10))
+    Tanner_graph = steane_graph()
 
     # print("Tanner graph:\n")
     # Tanner_graph.print_graph()
@@ -35,7 +14,7 @@ def __main__():
     print("Hopcroft-Karp algorithm:\n")
 
     start_time_color = time.time()
-    dp_layers = edge_color_hk(Tanner_graph)
+    dp_layers = edge_color_regular(Tanner_graph)
     end_time_color = time.time()
 
     broken = check_ordering_constraint(dp_layers)
@@ -58,7 +37,7 @@ def __main__():
     print(f"Time taken to fix ordering constraint: {end_time_fix - start_time_fix:.6f} seconds")
 
     print("--------------------------------")
-    print("Total time taken: {end_time_fix - start_time_color:.6f} seconds")
+    print(f"Total time taken: {end_time_fix - start_time_color:.6f} seconds")
     print("Final layers:\n")
     layers = layers_from_dp(dp_layers)
     print(len(layers))
