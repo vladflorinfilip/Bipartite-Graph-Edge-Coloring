@@ -1,10 +1,11 @@
 from bipartite_g import BipartiteGraph
 from algorithms import edge_color_hk
 import time
-from stencils import check_ordering_constraint, fix_ordering_constraint, layers_from_dp
+from graphs import complete_args
+from stencils import check_ordering_constraint, fix_ordering_constraint, layers_from_dp, check_no_layer_contains_two_incident_edges
 
 
-def initialize_graph(nx: int, nz: int, n: int):
+def initialize_graph(nx: int, nz: int, n: int, edges_x: list, edges_z: list):
     """Seed X and Z Tanner graphs with n data qubits and a matching of checks."""
     Tanner_graph = BipartiteGraph()
 
@@ -16,14 +17,16 @@ def initialize_graph(nx: int, nz: int, n: int):
     Tanner_graph.add_vertices(all_z, "ancilla")
     Tanner_graph.add_vertices(all_data, "data")
 
-    for d in all_data:
-        Tanner_graph.add_edges(d, all_x)
-        Tanner_graph.add_edges(d, all_z)
+    for i, j in edges_x:
+        Tanner_graph.add_edge((i, "X"), (j, "D"))
+
+    for i, j in edges_z:
+        Tanner_graph.add_edge((i, "Z"), (j, "D"))
 
     return Tanner_graph
 
 def __main__():
-    Tanner_graph = initialize_graph(1, 1, 601)
+    Tanner_graph = initialize_graph(*complete_args(1, 1, 10))
 
     # print("Tanner graph:\n")
     # Tanner_graph.print_graph()
@@ -31,7 +34,7 @@ def __main__():
     print("--------------------------------")
     print("Hopcroft-Karp algorithm:\n")
 
-    start_time_color     = time.time()
+    start_time_color = time.time()
     dp_layers = edge_color_hk(Tanner_graph)
     end_time_color = time.time()
 
@@ -61,6 +64,12 @@ def __main__():
     print(len(layers))
     # for layer in layers:
     #     print(layer)
+
+    check = check_no_layer_contains_two_incident_edges(dp_layers)
+    print("Checking no layer contains two incident edges:", check)
+    if not check:
+        print("Error: No layer contains two incident edges")
+        return
 
 
 if __name__ == "__main__":

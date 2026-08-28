@@ -1,45 +1,45 @@
-from main import initialize_graph
 from algorithms import hopcroft_karp_algorithm, edge_color_hk
+from graphs import complete_graph, steane_graph
 from stencils import (
     check_ordering_constraint,
     fix_ordering_constraint,
     layers_from_dp,
 )
 
+
 def test_is_bipartite():
-    graph = initialize_graph(1, 3, 5)
-    assert graph.is_bipartite()
+    assert complete_graph(1, 3, 5).is_bipartite()
+    assert complete_graph(2, 3, 5).is_bipartite()
+    assert complete_graph(100, 100, 100).is_bipartite()
+    assert steane_graph().is_bipartite()
 
-    graph = initialize_graph(2, 3, 5)
-    assert graph.is_bipartite()
-
-    graph = initialize_graph(100, 100, 100)
-    assert graph.is_bipartite()
 
 def test_hopcroft_karp_algorithm():
-    graph = initialize_graph(1, 1, 2)
-    layer, _, _ = hopcroft_karp_algorithm(graph)
+    layer, _, _ = hopcroft_karp_algorithm(complete_graph(1, 1, 2))
     assert layer == 2
 
-    graph = initialize_graph(1, 3, 5)
-    layer, _, _ = hopcroft_karp_algorithm(graph)
+    layer, _, _ = hopcroft_karp_algorithm(complete_graph(1, 3, 5))
     assert layer == 4
 
-    graph = initialize_graph(200, 300, 1000)
-    layer, _, _ = hopcroft_karp_algorithm(graph)
+    layer, _, _ = hopcroft_karp_algorithm(complete_graph(200, 300, 1000))
     assert layer == 500
+
+    layer, _, _ = hopcroft_karp_algorithm(steane_graph())
+    assert layer == 6
+
 
 def test_edge_color_hk():
     def n_layers(graph):
         dp = edge_color_hk(graph)
         return 1 + max(t for checks in dp.values() for t in checks.values())
 
-    assert n_layers(initialize_graph(1, 1, 10)) == 10
-    assert n_layers(initialize_graph(1, 3, 6)) == 6
-    assert n_layers(initialize_graph(1, 3, 5)) == 5
-    assert n_layers(initialize_graph(4, 4, 79)) == 79
-    assert n_layers(initialize_graph(4, 4, 80)) == 80
-    assert n_layers(initialize_graph(4, 4, 81)) == 81
+    assert n_layers(complete_graph(1, 1, 10)) == 10
+    assert n_layers(complete_graph(1, 3, 6)) == 6
+    assert n_layers(complete_graph(1, 3, 5)) == 5
+    assert n_layers(complete_graph(4, 4, 79)) == 79
+    assert n_layers(complete_graph(4, 4, 80)) == 80
+    assert n_layers(complete_graph(4, 4, 81)) == 81
+    assert n_layers(steane_graph()) == 6
 
 
 def _assert_layers_are_matchings(dp_layers):
@@ -83,8 +83,13 @@ def test_fix_ordering_constraint_handmade():
 
 
 def test_fix_ordering_constraint_after_coloring():
-    for nx, nz, n in [(1, 1, 2), (1, 1, 4), (1, 3, 4), (2, 2, 4)]:
-        dp = edge_color_hk(initialize_graph(nx, nz, n))
+    for graph in (
+        complete_graph(1, 1, 2),
+        complete_graph(1, 1, 4),
+        complete_graph(1, 3, 4),
+        complete_graph(2, 2, 4),
+    ):
+        dp = edge_color_hk(graph)
         dp = fix_ordering_constraint(dp, check_ordering_constraint(dp))
         assert check_ordering_constraint(dp) == []
         _assert_layers_are_matchings(dp)

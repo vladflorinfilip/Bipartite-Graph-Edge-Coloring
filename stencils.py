@@ -41,3 +41,24 @@ def layers_from_dp(dp_layers):
         for v, t in checks.items():
             layers[t].append((d, v))
     return layers
+
+def check_no_layer_contains_two_incident_edges(dp_layers):
+    layers = layers_from_dp(dp_layers)
+    for layer in layers:
+        seen_x = set()
+        seen_z = set()
+        seen_d = set()
+        for d, v in layer:
+            if v[1] == "X":
+                if v[0] in seen_x:
+                    return False
+                seen_x.add(v[0])
+            elif v[1] == "Z":
+                if v[0] in seen_z:
+                    return False
+                seen_z.add(v[0])
+            else:
+                if v[0] in seen_d:
+                    return False
+                seen_d.add(v[0])
+    return True
