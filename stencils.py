@@ -82,7 +82,7 @@ def fix_combo(dp_layers, broken, max_iterations=10):
             used_check.add(check)
         broken = check_ordering_constraint(dp_layers)
     return dp_layers
-    
+
 def layers_from_dp(dp_layers):
     if not dp_layers:
         return []
@@ -107,8 +107,7 @@ def check_no_layer_contains_two_incident_edges(dp_layers):
                 if v[0] in seen_z:
                     return False
                 seen_z.add(v[0])
-            else:
-                if v[0] in seen_d:
-                    return False
-                seen_d.add(v[0])
+            if d in seen_d:
+                return False
+            seen_d.add(d)
     return True

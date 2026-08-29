@@ -46,3 +46,17 @@ class BipartiteGraph:
                 if u in self.V:
                     return False
         return True
+
+    def copy(self):
+        new_graph = BipartiteGraph()
+        new_graph.U = self.U.copy()
+        new_graph.V = self.V.copy()
+        new_graph.adj = {v: list(nbrs) for v, nbrs in self.adj.items()}
+        return new_graph
+    
+    def remove_vertex(self, vertex):
+        self.U.discard(vertex)
+        self.V.discard(vertex)
+        for neighbour in self.adj.pop(vertex, []):
+            if neighbour in self.adj:
+                self.adj[neighbour].remove(vertex)
