@@ -1,6 +1,6 @@
 from edge_coloring import edge_color_max, edge_color_regular
 import time
-from graphs import complete_graph, steane_graph
+from graphs import complete_graph, steane_graph, toric_graph
 from stencils import check_ordering_constraint, fix_ordering_constraint, layers_from_dp, check_no_layer_contains_two_incident_edges
 
 
@@ -11,7 +11,7 @@ def __main__():
     # Tanner_graph.print_graph()
 
     print("--------------------------------")
-    print("Hopcroft-Karp algorithm:\n")
+    print("Edge coloring algorithm (regular):\n")
 
     start_time_color = time.time()
     dp_layers = edge_color_regular(Tanner_graph)

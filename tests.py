@@ -3,9 +3,13 @@ from graphs import complete_graph, steane_graph, toric_graph
 from maximum_matching import hopcroft_karp_algorithm
 from stencils import (
     check_ordering_constraint,
-    fix_ordering_constraint,
+    fix_ordering_constraint_min_distance,
+    fix_ordering_constraint_trailing_layer,
     layers_from_dp,
+    fix_combo,
 )
+
+FIXERS = (fix_ordering_constraint_min_distance, fix_ordering_constraint_trailing_layer, fix_combo)
 
 
 def test_is_bipartite():
@@ -74,14 +78,15 @@ def test_check_ordering_constraint():
 def test_fix_ordering_constraint_handmade():
     d0, d1 = (0, "D"), (1, "D")
     x, z = (0, "X"), (0, "Z")
-    dp = {
-        d0: {x: 0, z: 1},
-        d1: {x: 1, z: 0},
-    }
-    broken = check_ordering_constraint(dp)
-    dp = fix_ordering_constraint(dp, broken)
-    assert check_ordering_constraint(dp) == []
-    _assert_layers_are_matchings(dp)
+    for fix in FIXERS:
+        dp = {
+            d0: {x: 0, z: 1},
+            d1: {x: 1, z: 0},
+        }
+        broken = check_ordering_constraint(dp)
+        dp = fix(dp, broken)
+        assert check_ordering_constraint(dp) == []
+        _assert_layers_are_matchings(dp)
 
 
 def test_fix_ordering_constraint_after_coloring():
@@ -93,14 +98,11 @@ def test_fix_ordering_constraint_after_coloring():
             complete_graph(2, 2, 4),
             steane_graph(),
         ):
-            dp = color(graph)
-            for _ in range(5):
-                broken = check_ordering_constraint(dp)
-                if not broken:
-                    break
-                dp = fix_ordering_constraint(dp, broken)
-            assert check_ordering_constraint(dp) == []
-            _assert_layers_are_matchings(dp)
+            for fix in FIXERS:
+                dp = color(graph)
+                dp = fix(dp, check_ordering_constraint(dp))
+                assert check_ordering_constraint(dp) == []
+                _assert_layers_are_matchings(dp)
 
 
 def test_layers_from_dp():
