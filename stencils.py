@@ -56,6 +56,7 @@ def fix_ordering_constraint_trailing_layer(
     broken: list,
     max_iterations: int = 10
 ):
+    """Trailing layer repair, which adds one layer per broken pair."""
     new_t = 1 + max(t for checks in dp_layers.values() for t in checks.values())
     used_d, used_check = set(), set()
     while len(broken) > 0 and max_iterations > 0:
