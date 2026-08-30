@@ -2,6 +2,8 @@
 
 _written by **Vlad Filip**_
 
+AI disclaimer: AI was used to search research paper, summarize existing algorithms and compare approaches before implementation. No AI tools were used in writing the attached code.
+
 ## Edge Coloring
 A bipartite graph is a network whose vertices can be split into two groups. Edges on a bipartite graph exclusively connect vertices from different groups, never from the same group. The task of assigning each edge to a layer is effectively an edge coloring algorithm, where no layer contains two edges incident on the same vertex. Edge coloring is a well studied problem within mathematics, where the Koning's line coloring theorem states that the chromatic index of a bipartite graph equals its maximum degree ($\Delta$). This means that the optimal number of layers for a bipartite graph is equal to the $\Delta$.
 
@@ -17,7 +19,7 @@ I have considered 3 ways in which the edge coloring of a bipartite graph can be 
 3. **Cole–Ost–Schirra:** The most efficient solution for time complexity given by $O(E\log\Delta)$. Despite being the optimal solution for edge coloring, I chose to not implement this algorithm because the improvement is small ($\Delta$ is 4 on a toric and 6 on Steane). The algorithm would have removed the odd-degree penalty from the Euler splitting, which in this case is small when considering $\log\Delta$ and $\Delta$.
 
 ## Ordering Constraint
-The ordering constraint requires every X/Z check pair to share an even number of qubits where the X check acts first.
+The ordering constraint requires every X/Z check pair to share an even number of qubits where the X check acts first. I have considered two approaches here by either edge coloring the entire bipartite graph in one OR splitting it into two bipartite graphs for X and Z and then combining the solution.
 
 ### Ordering Fixes
 
