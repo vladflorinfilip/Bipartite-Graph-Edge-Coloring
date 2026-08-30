@@ -7,15 +7,15 @@ _AI disclaimer:_ AI was used to search research papers, summarize existing algor
 ## Code structure
 Run `python main.py` to reproduce the comparison of every method described below, and `python plot.py` to regenerate the figure in the Results section.
 
-* `bipartite_g.py` — the `BipartiteGraph` class.
-* `graphs.py` — the test fixtures. `initialize_graph` builds a Tanner graph from the qubit counts and the two edge lists, and on top of it sit the complete bipartite seed, the Steane code and the toric code at any distance.
-* `maximum_matching.py` — the Hopcroft-Karp maximum matching, used as the building block of every colouring method.
-* `edge_coloring.py` — the three colourers.
-* `stencils.py` — the ordering constraint.
-* `multigraph_algorithm.py` — the X-then-Z route: split the graph, colour each half, then recombine either naively or with the bin packing combiner.
-* `main.py` — runs every colourer and every scheduling algorithm over the fixtures and prints the layers, broken pairs and timings.
-* `plot.py` — draws those same tables into `results.png`.
-* `tests.py` — unit tests.
+* `bipartite_g.py` = the `BipartiteGraph` class
+* `graphs.py` = the test fixtures. `initialize_graph` builds a Tanner graph from the qubit counts and the two edge lists, and on top of it sit the complete bipartite seed, the Steane code and the toric code at any distance
+* `maximum_matching.py` = the Hopcroft-Karp maximum matching, used as the building block of every colouring method
+* `edge_coloring.py` = the three colourers
+* `stencils.py` = the ordering constraint
+* `multigraph_algorithm.py` = the X-then-Z route: split the graph, colour each half, then recombine either naively or with the bin packing combiner
+* `main.py` = runs every colourer and every scheduling algorithm over the fixtures and prints the layers, broken pairs and timings
+* `plot.py` = draws those same tables into `results.png`.
+* `tests.py` = unit tests
 
 ## Edge Coloring
 A bipartite graph is a network whose vertices can be split into two groups. Edges on a bipartite graph exclusively connect vertices from different groups, never from the same group. The task of assigning each edge to a layer is effectively an edge coloring algorithm, where no layer contains two edges incident on the same vertex. Edge coloring is a well studied problem within mathematics, where the Koning's line coloring theorem states that the chromatic index of a bipartite graph equals its maximum degree ($\Delta$). This means that the optimal number of layers for a bipartite graph is equal to the $\Delta$.
@@ -27,7 +27,7 @@ I have considered 3 ways in which the edge coloring of a bipartite graph can be 
 
     * **Padding to a $\Delta$-regular graph**, which makes every matching perfect. By creating virtual edges and nodes to our graph to ensure a $\Delta$-regular pattern, this guratees that the algorithm would return $\Delta$ layers by peeling exactly $\Delta$ edges with one matching. This means that after we have constructed our layer matching we can remove the virtual edges and vertex and obtain a valid edge coliring solution. While this is guranteed to succeed mathematically, needs no extra validation but has an added time complexity. To build the padded graph, we scale to O(n $\Delta$), where n is the maximum number of vertices from one side of the bipartite graph. This means that if E for the padded graph is much larger than the actual E, the algorithm would be slower. Therefore, padding costs us a factor of $n\Delta / E$, which is itself a measure of how uneven the graph is: it equals 1 when the graph is already $\Delta$-regular and balanced, and grows as a single vertex starts to dominate. This is why the method suits the problem at hand. CSS codes are LDPC by construction, with a fixed stabilizer weight and a fixed qubit degree, so the ratio sits at or near 1 across the whole family. My toric graphs are already 4-regular, so padding adds zero edges and the guarantee comes for free; measured, it also runs about 2.5x faster than the repair route because it skips the repair entirely. Steane is small and lopsided (qubit 6 has degree 6, qubit 0 has degree 2) so it pays 1.75x, which still amounts to under a tenth of a millisecond.
 
-2. **Euler Splitting:** halving the degree along closed walks, $O(E\log\Delta)$ on optimal cases but $O(E\Delta)$ for worse case scenarios.
+2. **Euler Splitting:** halving the degree along closed walks, $O(E\log\Delta)$ when $\Delta$ is a power of two and $O(E\sqrt{V}\log\Delta)$ in the worst case. This algorithm is built on the divide-et-impera approach (divide and conquer). Once the graph is padded every vertex has exactly $\Delta$ edges, and while that degree is even a walk always consumes edges at a vertex in arrive/leave pairs. We then split the edges of that walk alternately into two piles. This hands every vertex exactly half of its edges, which cuts the graph into two. We keep doing this until the degree reaches 1, at which point every vertex has a single edge. This means the pile is a perfect matching (one layer). The halving breaks down as soon as a degree is odd. When we have an odd case, we peel one perfect matching with Hopcroft-Karp first to return to an even degree. This remains the only place a matching is ever computed. Hence, it is what separates the best and worst cases: $\Delta = 4$ on a toric code halves to 2 and then to 1 without ever becoming odd. Yet, $\Delta = 6$ on Steane halves into two odd 3-regular graphs and needs two. Edges are tracked by their index into a flat list rather than by their endpoints. This is because padding can add several parallel edges between the same pair of vertices and only an index can tell them apart. 
 
 3. **Cole–Ost–Schirra:** The most efficient solution for time complexity given by $O(E\log\Delta)$. Despite being the optimal solution for edge coloring, I chose to not implement this algorithm because the improvement is small ($\Delta$ is 4 on a toric and 6 on Steane). The algorithm would have removed the odd-degree penalty from the Euler splitting, which in this case is small when considering $\log\Delta$ and $\Delta$.
 

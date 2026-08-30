@@ -107,10 +107,6 @@ def edge_color_regular(graph: BipartiteGraph):
 
 def euler_halve(edges: list, ids: list):
     """Deal alternate edges of each closed walk into two halves.
-
-    Every vertex has even degree, so a walk can only run out of edges back where
-    it started, and a closed walk in a bipartite graph has even length. Taking
-    every other edge therefore hands each half exactly half of every degree.
     """
     incident = {}
     for i in ids:
@@ -118,6 +114,7 @@ def euler_halve(edges: list, ids: list):
         incident.setdefault(u, []).append(i)
         incident.setdefault(v, []).append(i)
 
+    # Give me unused edges from a node
     def leave(node):
         while incident[node]:
             i = incident[node].pop()
@@ -138,11 +135,9 @@ def euler_halve(edges: list, ids: list):
 
 def peel_perfect_matching(edges: list, ids: list):
     """Lift one matching out so the remaining degree is even everywhere.
-
-    Parallel edges collapse when the helper graph is built, which is harmless:
-    Hall's condition only cares which vertices are adjacent, not how often.
     """
-    helper, first_edge = BipartiteGraph(), {}
+    helper = BipartiteGraph()
+    first_edge = {}
     for i in ids:
         u, v = edges[i]
         helper.add_vertex(u, "data")
@@ -157,9 +152,8 @@ def peel_perfect_matching(edges: list, ids: list):
 
 def edge_color_euler(graph: BipartiteGraph):
     """Halve the degree repeatedly instead of peeling one matching per layer.
-
     Costs O(E log delta) against O(delta * E * sqrt(V)) for the matching route,
-    which only pays off once delta is large; QEC codes keep it small.
+    which only pays off once delta is large.
     """
     if not any(graph.adj.values()):
         return {}
