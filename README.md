@@ -2,7 +2,7 @@
 
 _written by **Vlad Filip**_
 
-AI disclaimer: AI was used to search research papers, summarize existing algorithms and compare approaches before implementation. No AI tools were used in writing the attached code.
+_AI disclaimer:_ AI was used to search research papers, summarize existing algorithms for learning and compare approaches before implementation, particularly on edge coloring existing methods. However, the maximizing cover of a layer and the padding approach, as well as the fixes for ordering constraint and the X-then-Z solutions remain AI-free.
 
 ## Edge Coloring
 A bipartite graph is a network whose vertices can be split into two groups. Edges on a bipartite graph exclusively connect vertices from different groups, never from the same group. The task of assigning each edge to a layer is effectively an edge coloring algorithm, where no layer contains two edges incident on the same vertex. Edge coloring is a well studied problem within mathematics, where the Koning's line coloring theorem states that the chromatic index of a bipartite graph equals its maximum degree ($\Delta$). This means that the optimal number of layers for a bipartite graph is equal to the $\Delta$.
@@ -24,6 +24,11 @@ The ordering constraint requires every X/Z check pair to share an even number of
 ### Ordering Fixes
 
 ### Multigraph & Bin Packing
+The multigraph approach ensures the ordering constraint holds by splitting the bipartite graph into two smaller graphs (one for X checks and one for Z checks). We then run edge coloring on each sub-graph and obtaina valid scheduling for those checks. Combining the two obtained schedules into one valid solution is approached in two ways:
+
+1. **The naive method** simply appends the Z layers to the X layers. This ensures that every Z ancilla comes after all the X ancillas, respecting the ordering constrained. However, this method will have a larger schedule than the optimal $\Delta$ because the layers will be equal to the sum of the maximum degrees of the X and Z sub-graaphs. However, there will be no need for a ordering fix or any post coloring manupilation, simply the O(1) append operation.
+
+2. **The bin packing method** takes schedule from the Z graph and for an edge (d, z) it checks the last appearance of the d quibit in the X schedule. It then places the edge, if the coloring scheme allows, in the imediate X layer after and removes it from the Z schedule. If the last appearance of qubit d is in the last layer of the X graph, it then keeps it in the Z graph and appends the edge similarly to the naive methods. This algorithm has a time complexity of $O(E\Delta)$ for the packing loop itself, since each Z edge scans at most $\Delta_x$ candidate layers and every slot test is an $O(1)$ set lookup. The leftover edges that never found a free slot are then coloured again with `edge_color_regular` at $O(\Delta E\sqrt{V})$, which dominates, so the combine step sits in the same complexity class as the colouring it builds on and the packing is asymptotically free.
 
 ## CSS Test Data
 A Calderbank–Shor–Steane (CSS) code are graph networks of real qubits and ancilla qubits (checks) used to encode logical information. They use stabilizers to correct errors in magnitude (X stablizers), phase (Z) or both (Y). In my solution, I used two types of CSS to test my algorithms: Steane (which encodes one logical qubit using 7 physical qubits, being a fixed small block with maximum degree 6 and minimum degree 2) and toric (a code which puts qubits on the edges of a 2D periodic lattice and ancillas on the star and pallete configurations, having a degree of 4 across).
