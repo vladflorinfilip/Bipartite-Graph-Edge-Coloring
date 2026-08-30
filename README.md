@@ -2,7 +2,7 @@
 
 _written by **Vlad Filip**_
 
-AI disclaimer: AI was used to search research paper, summarize existing algorithms and compare approaches before implementation. No AI tools were used in writing the attached code.
+AI disclaimer: AI was used to search research papers, summarize existing algorithms and compare approaches before implementation. No AI tools were used in writing the attached code.
 
 ## Edge Coloring
 A bipartite graph is a network whose vertices can be split into two groups. Edges on a bipartite graph exclusively connect vertices from different groups, never from the same group. The task of assigning each edge to a layer is effectively an edge coloring algorithm, where no layer contains two edges incident on the same vertex. Edge coloring is a well studied problem within mathematics, where the Koning's line coloring theorem states that the chromatic index of a bipartite graph equals its maximum degree ($\Delta$). This means that the optimal number of layers for a bipartite graph is equal to the $\Delta$.
@@ -26,9 +26,18 @@ The ordering constraint requires every X/Z check pair to share an even number of
 ### Multigraph & Bin Packing
 
 ## CSS Test Data
-A Calderbank–Shor–Steane (CSS) code are graph networks of real qubits and ancilla qubits (checks) used to encode logical information. They use stabilizers to correct errors in magnitude (X stablizers), phase (Z) or both (Y).
+A Calderbank–Shor–Steane (CSS) code are graph networks of real qubits and ancilla qubits (checks) used to encode logical information. They use stabilizers to correct errors in magnitude (X stablizers), phase (Z) or both (Y). In my solution, I used two types of CSS to test my algorithms: Steane (which encodes one logical qubit using 7 physical qubits, being a fixed small block with maximum degree 6 and minimum degree 2) and toric (a code which puts qubits on the edges of a 2D periodic lattice and ancillas on the star and pallete configurations, having a degree of 4 across).
 
 ## Results
+The graph below presents the results of the algorithms I have described above:
+
+![Layers and runtime for each colouring and scheduling algorithm](results.png)
+
+For edge coloring, all three algorithms hit the $\Delta$ lower bound on every fixture in under a millisecond. Hence, the choice between them rests on the padding cost rather than on quality. That cost only bites on the lopsided complete graphs (x10 padding makes `edge_color_regular` roughly three times slower than `edge_color_max`, while on the near-regular toric codes padding is free and it wins). 
+
+The bottom-left panel shows that the ordering constraint, not the colouring, is what actually drives the layer count. Therefore, I see the difficult part of this exercises in meeting the ordering constraint. This reminds me of a paper from RiverLane that introduced the Collision Clusterring algorithm on a surface code. Repairing an interleaved colouring degrades badly as the code grows, reaching 124 layers on toric $d=5$ against a lower bound of 4. By comparison, the X-then-Z construction stays flat at 7-8 layers on every fixture. I'd therefore pick **X-then-Z with the packed combiner**, since it is correct by construction, stays within roughly $2\Delta$ as the code scales, and is the fastest of the four to compute.
+
 
 ## Futher Improvements and Other Considerations
+If given more time, I would have looked to implement the Cole–Ost–Schirra edge coloring scheme. More importantly, I've considered different way of packing the X-then-Z bipartite graphs to reduce the layer closer to the optimal. I would look at exploiting the even parity by grouping edges from the Z graph and find a way to insert them in existing X layers, breaking the Z always comes after rule, but ensuring parity by the Z groupings. However, this approach could break the parity of unintended (x,z) pairs so it would need carefull consideration.
 
