@@ -1,7 +1,7 @@
 from edge_coloring import edge_color_regular
 from bipartite_g import BipartiteGraph
 
-def multigraph_algorithm(graph: BipartiteGraph):
+def multigraph_algorithm(graph: BipartiteGraph, combine=None):
     """Separate the graph into X and Z graphs"""
     x_graph = graph.copy()
     z_graph = graph.copy()
@@ -17,7 +17,7 @@ def multigraph_algorithm(graph: BipartiteGraph):
     z_dp_layers = edge_color_regular(z_graph)
 
     """Combine the X and Z graphs"""
-    return combine_x_and_z_graphs_naive(x_dp_layers, z_dp_layers)
+    return (combine or combine_x_and_z_graphs_naive)(x_dp_layers, z_dp_layers)
 
 def combine_x_and_z_graphs_naive(x_dp_layers, z_dp_layers):
     """Combine the X and Z graphs, every Z edge landing after every X edge"""
@@ -42,8 +42,8 @@ def combine_x_and_z_graphs_packed(x_dp_layers, z_dp_layers):
     leftover = []
     for d, checks in z_dp_layers.items():
         d_slots = busy.setdefault(d, set())
-        # Staying after this qubit's last X edge is what keeps the parity intact.
         window = range(max(d_slots, default=-1) + 1, delta_x)
+
         for v in sorted(checks, key=checks.get):
             v_slots = busy.setdefault(v, set())
             slot = next((t for t in window if t not in d_slots and t not in v_slots), None)

@@ -1,55 +1,81 @@
-from edge_coloring import edge_color_max, edge_color_regular
+"""Compare the scheduling algorithms on a set of CSS codes.
+
+Every algorithm turns a Tanner graph into dp_layers, so they are judged on the
+same three numbers: how long they took, how many layers they need, and whether
+any ordering pair is left broken at the end.
+"""
+
 import time
-from graphs import complete_graph, steane_graph, toric_graph
-from stencils import check_ordering_constraint, fix_ordering_constraint, layers_from_dp, check_no_layer_contains_two_incident_edges
+
+from edge_coloring import edge_color_regular
+from graphs import steane_graph, toric_graph
+from multigraph_algorithm import (
+    combine_x_and_z_graphs_naive,
+    combine_x_and_z_graphs_packed,
+    multigraph_algorithm,
+)
+from stencils import (
+    check_no_layer_contains_two_incident_edges,
+    check_ordering_constraint,
+    fix_ordering_constraint_min_distance,
+    fix_ordering_constraint_trailing_layer,
+    layers_from_dp,
+)
 
 
-def __main__():
-    Tanner_graph = steane_graph()
+def interleaved_with_fix(graph, fix):
+    """Colour X and Z together in delta layers, then repair the broken pairs."""
+    dp_layers = edge_color_regular(graph)
+    return fix(dp_layers, check_ordering_constraint(dp_layers))
 
-    # print("Tanner graph:\n")
-    # Tanner_graph.print_graph()
 
-    print("--------------------------------")
-    print("Edge coloring algorithm (regular):\n")
+ALGORITHMS = (
+    ("interleaved + min_distance",
+     lambda graph: interleaved_with_fix(graph, fix_ordering_constraint_min_distance)),
+    ("interleaved + trailing",
+     lambda graph: interleaved_with_fix(graph, fix_ordering_constraint_trailing_layer)),
+    ("X-then-Z naive", lambda graph: multigraph_algorithm(graph, combine_x_and_z_graphs_naive)),
+    ("X-then-Z packed", lambda graph: multigraph_algorithm(graph, combine_x_and_z_graphs_packed)),
+)
 
-    start_time_color = time.time()
-    dp_layers = edge_color_regular(Tanner_graph)
-    end_time_color = time.time()
+GRAPHS = (
+    ("steane", steane_graph),
+    ("toric d=3", lambda: toric_graph(3)),
+    ("toric d=4", lambda: toric_graph(4)),
+    ("toric d=5", lambda: toric_graph(5)),
+)
 
-    broken = check_ordering_constraint(dp_layers)
-    print("Broken before fix:", len(broken))
-    print(f"Time taken to color edges: {end_time_color - start_time_color:.6f} seconds")
-    print("Layers before fix:\n")
-    layers = layers_from_dp(dp_layers)
-    print(len(layers))
-    # for layer in layers:
-    #     print(layer)
 
-    start_time_fix = time.time()
-    dp_layers = fix_ordering_constraint(dp_layers, broken)
-    end_time_fix = time.time()
+def measure(algorithm, graph) -> dict:
+    start = time.perf_counter()
+    dp_layers = algorithm(graph)
+    seconds = time.perf_counter() - start
+    return {
+        "seconds": seconds,
+        "layers": len(layers_from_dp(dp_layers)),
+        "broken": len(check_ordering_constraint(dp_layers)),
+        "valid": check_no_layer_contains_two_incident_edges(dp_layers),
+    }
 
-    print("--------------------------------")
-    print("Fixing ordering constraint:\n")
 
-    print("Broken after fix:", len(check_ordering_constraint(dp_layers)))
-    print(f"Time taken to fix ordering constraint: {end_time_fix - start_time_fix:.6f} seconds")
+def lower_bound(graph) -> int:
+    """No schedule can beat the busiest vertex, and Konig says that bound is tight."""
+    return max(len(nbrs) for nbrs in graph.adj.values())
 
-    print("--------------------------------")
-    print(f"Total time taken: {end_time_fix - start_time_color:.6f} seconds")
-    print("Final layers:\n")
-    layers = layers_from_dp(dp_layers)
-    print(len(layers))
-    # for layer in layers:
-    #     print(layer)
 
-    check = check_no_layer_contains_two_incident_edges(dp_layers)
-    print("Checking no layer contains two incident edges:", check)
-    if not check:
-        print("Error: No layer contains two incident edges")
-        return
-
+def main():
+    results = {}
+    for graph_name, build in GRAPHS:
+        bound = lower_bound(build())
+        print("=== %s (lower bound %d layers) ===" % (graph_name, bound))
+        print("%-28s %-8s %-8s %-7s %s" % ("algorithm", "layers", "broken", "valid", "seconds"))
+        for algorithm_name, algorithm in ALGORITHMS:
+            got = measure(algorithm, build())
+            results[(graph_name, algorithm_name)] = got
+            print("%-28s %-8d %-8d %-7s %.6f" % (
+                algorithm_name, got["layers"], got["broken"],
+                "yes" if got["valid"] else "NO", got["seconds"]))
+        print()
 
 if __name__ == "__main__":
-    __main__()
+    main()
