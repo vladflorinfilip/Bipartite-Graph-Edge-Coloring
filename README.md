@@ -4,6 +4,19 @@ _written by **Vlad Filip**_
 
 _AI disclaimer:_ AI was used to search research papers, summarize existing algorithms for learning and compare approaches before implementation, particularly on edge coloring existing methods. However, the maximizing cover of a layer and the padding approach, as well as the fixes for ordering constraint and the X-then-Z solutions remain AI-free.
 
+## Code structure
+Run `python main.py` to reproduce the comparison of every method described below, and `python plot.py` to regenerate the figure in the Results section.
+
+* `bipartite_g.py` — the `BipartiteGraph` class.
+* `graphs.py` — the test fixtures. `initialize_graph` builds a Tanner graph from the qubit counts and the two edge lists, and on top of it sit the complete bipartite seed, the Steane code and the toric code at any distance.
+* `maximum_matching.py` — the Hopcroft-Karp maximum matching, used as the building block of every colouring method.
+* `edge_coloring.py` — the three colourers.
+* `stencils.py` — the ordering constraint.
+* `multigraph_algorithm.py` — the X-then-Z route: split the graph, colour each half, then recombine either naively or with the bin packing combiner.
+* `main.py` — runs every colourer and every scheduling algorithm over the fixtures and prints the layers, broken pairs and timings.
+* `plot.py` — draws those same tables into `results.png`.
+* `tests.py` — unit tests.
+
 ## Edge Coloring
 A bipartite graph is a network whose vertices can be split into two groups. Edges on a bipartite graph exclusively connect vertices from different groups, never from the same group. The task of assigning each edge to a layer is effectively an edge coloring algorithm, where no layer contains two edges incident on the same vertex. Edge coloring is a well studied problem within mathematics, where the Koning's line coloring theorem states that the chromatic index of a bipartite graph equals its maximum degree ($\Delta$). This means that the optimal number of layers for a bipartite graph is equal to the $\Delta$.
 
