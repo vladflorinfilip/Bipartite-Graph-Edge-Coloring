@@ -7,8 +7,8 @@ any ordering pair is left broken at the end.
 
 import time
 
-from edge_coloring import edge_color_regular
-from graphs import steane_graph, toric_graph
+from edge_coloring import edge_color_euler, edge_color_max, edge_color_regular, pad_to_regular
+from graphs import complete_graph, steane_graph, toric_graph
 from multigraph_algorithm import (
     combine_x_and_z_graphs_naive,
     combine_x_and_z_graphs_packed,
@@ -38,6 +38,20 @@ ALGORITHMS = (
     ("X-then-Z packed", lambda graph: multigraph_algorithm(graph, combine_x_and_z_graphs_packed)),
 )
 
+COLOURERS = (
+    ("edge_color_max", edge_color_max),
+    ("edge_color_regular", edge_color_regular),
+    ("edge_color_euler", edge_color_euler),
+)
+
+COLOURING_GRAPHS = (
+    ("steane", steane_graph),
+    ("toric d=3", lambda: toric_graph(3)),
+    ("toric d=5", lambda: toric_graph(5)),
+    ("complete 4x4x40", lambda: complete_graph(4, 4, 40)),
+    ("complete 4x4x80", lambda: complete_graph(4, 4, 80)),
+)
+
 GRAPHS = (
     ("steane", steane_graph),
     ("toric d=3", lambda: toric_graph(3)),
@@ -63,7 +77,39 @@ def lower_bound(graph) -> int:
     return max(len(nbrs) for nbrs in graph.adj.values())
 
 
+def n_layers(dp_layers) -> int:
+    return 0 if not dp_layers else 1 + max(t for checks in dp_layers.values() for t in checks.values())
+
+
+def compare_colourings():
+    """Both strategies reach delta, so the choice rests on guarantees and on padding cost.
+
+    Padding is provably optimal because a delta-regular bipartite multigraph splits
+    into exactly delta perfect matchings, while cover_max_degree is only a heuristic.
+    The price is the dummy edges, which stay free on the near-regular graphs real
+    codes produce and get expensive on lopsided complete ones.
+    """
+    print("=== edge colouring: delta layers is optimal (Konig) ===")
+    print("%-17s %-7s %-9s %s" % (
+        "graph", "delta", "padding", "  ".join("%-24s" % name for name, _ in COLOURERS)))
+    for graph_name, build in COLOURING_GRAPHS:
+        graph = build()
+        delta = lower_bound(graph)
+        edges = sum(len(nbrs) for nbrs in graph.adj.values()) // 2
+        padded = sum(len(nbrs) for nbrs in pad_to_regular(graph, delta).adj.values()) // 2
+        cells = []
+        for _, colour in COLOURERS:
+            start = time.perf_counter()
+            layers = n_layers(colour(build()))
+            cells.append("%-24s" % ("%d layers%s  %.5fs" % (
+                layers, "" if layers == delta else " (+%d)" % (layers - delta),
+                time.perf_counter() - start)))
+        print("%-17s %-7d %-9s %s" % (graph_name, delta, "x%.1f" % (padded / edges), "  ".join(cells)))
+    print()
+
+
 def main():
+    compare_colourings()
     results = {}
     for graph_name, build in GRAPHS:
         bound = lower_bound(build())

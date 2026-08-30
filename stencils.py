@@ -7,13 +7,20 @@ def check_ordering_constraint(dp_layers):
             elif v[1] == "Z":
                 zs.add(v)
     broken = []
-    for x in xs:
-        for z in zs:
+    for x in sorted(xs):
+        for z in sorted(zs):
             I = [d for d, ch in dp_layers.items() if x in ch and z in ch]
             S = [d for d in I if dp_layers[d][x] < dp_layers[d][z]]
             if len(S) % 2 == 1:
                 broken.append((x, z, I, S))
     return broken
+
+def _converged(dp_layers, broken):
+    """A repair that ran out of iterations must say so rather than look successful."""
+    if broken:
+        raise RuntimeError("gave up with %d pairs still broken" % len(broken))
+    return dp_layers
+
 
 def fix_ordering_constraint_min_distance(
     dp_layers: dict,
@@ -37,7 +44,7 @@ def fix_ordering_constraint_min_distance(
                         checks[v] += 1
             dp_layers[d][early] = t + 1
         broken = check_ordering_constraint(dp_layers)
-    return dp_layers
+    return _converged(dp_layers, broken)
 
 
 def distance_between_checks(dp_layers, d, x, z):
@@ -63,7 +70,7 @@ def fix_ordering_constraint_trailing_layer(
             used_d.add(d)
             used_check.add(check)
         broken = check_ordering_constraint(dp_layers)
-    return dp_layers
+    return _converged(dp_layers, broken)
 
 def fix_combo(dp_layers, broken, max_iterations=10):
     """Their packing loop, but choosing the qubit the way min_distance does."""
@@ -81,7 +88,7 @@ def fix_combo(dp_layers, broken, max_iterations=10):
             used_d.add(d)
             used_check.add(check)
         broken = check_ordering_constraint(dp_layers)
-    return dp_layers
+    return _converged(dp_layers, broken)
 
 def layers_from_dp(dp_layers):
     if not dp_layers:

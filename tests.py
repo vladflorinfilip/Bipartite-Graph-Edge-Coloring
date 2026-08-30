@@ -1,6 +1,13 @@
-from edge_coloring import edge_color_max, edge_color_regular
+import pytest
+
+from edge_coloring import edge_color_euler, edge_color_max, edge_color_regular
 from graphs import complete_graph, steane_graph, toric_graph
 from maximum_matching import hopcroft_karp_algorithm
+from multigraph_algorithm import (
+    combine_x_and_z_graphs_naive,
+    combine_x_and_z_graphs_packed,
+    multigraph_algorithm,
+)
 from stencils import (
     check_ordering_constraint,
     fix_ordering_constraint_min_distance,
@@ -103,6 +110,30 @@ def test_fix_ordering_constraint_after_coloring():
                 dp = fix(dp, check_ordering_constraint(dp))
                 assert check_ordering_constraint(dp) == []
                 _assert_layers_are_matchings(dp)
+
+
+def test_edge_color_euler_reaches_delta():
+    for graph in (steane_graph(), toric_graph(3), complete_graph(1, 3, 5), complete_graph(4, 4, 20)):
+        delta = max(len(nbrs) for nbrs in graph.adj.values())
+        dp = edge_color_euler(graph)
+        assert 1 + max(t for checks in dp.values() for t in checks.values()) == delta
+        assert sum(len(checks) for checks in dp.values()) == sum(len(graph.adj[u]) for u in graph.U)
+        _assert_layers_are_matchings(dp)
+
+
+def test_multigraph_combiners():
+    for combine in (combine_x_and_z_graphs_naive, combine_x_and_z_graphs_packed):
+        for graph in (steane_graph(), toric_graph(3)):
+            dp = multigraph_algorithm(graph, combine)
+            assert check_ordering_constraint(dp) == []
+            _assert_layers_are_matchings(dp)
+
+
+def test_fixers_admit_when_they_give_up():
+    for fix in FIXERS:
+        dp = edge_color_regular(toric_graph(3))
+        with pytest.raises(RuntimeError):
+            fix(dp, check_ordering_constraint(dp), max_iterations=1)
 
 
 def test_layers_from_dp():

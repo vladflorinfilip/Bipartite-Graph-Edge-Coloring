@@ -1,13 +1,14 @@
 from bipartite_g import BipartiteGraph
+from collections import deque
 
 def hopcroft_karp_algorithm(graph: BipartiteGraph) -> tuple[int, dict, dict]:
-    pair_u = {u: None for u in graph.U}
-    pair_v = {v: None for v in graph.V}
-    dist = {u: float('inf') for u in graph.U}
+    pair_u = {u: None for u in sorted(graph.U)}
+    pair_v = {v: None for v in sorted(graph.V)}
+    dist = {u: float('inf') for u in sorted(graph.U)}
 
     def bfs():
-        queue = []
-        for u in graph.U:
+        queue = deque()
+        for u in sorted(graph.U):
             if pair_u[u] is None:
                 dist[u] = 0
                 queue.append(u)
@@ -16,7 +17,7 @@ def hopcroft_karp_algorithm(graph: BipartiteGraph) -> tuple[int, dict, dict]:
         dist[None] = float('inf')
 
         while queue:
-            u = queue.pop(0)
+            u = queue.popleft()
             if dist[u] < dist[None]:
                 for v in graph.adj[u]:
                     u2 = pair_v[v]
@@ -39,7 +40,7 @@ def hopcroft_karp_algorithm(graph: BipartiteGraph) -> tuple[int, dict, dict]:
     
     matching = 0
     while bfs():
-        for u in graph.U:
+        for u in sorted(graph.U):
             if pair_u[u] is None and dfs(u):
                 matching += 1
     return matching, pair_u, pair_v
