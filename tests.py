@@ -146,3 +146,8 @@ def test_layers_from_dp():
     layers = layers_from_dp(dp)
     assert (d0, x) in layers[0] and (d1, z) in layers[0]
     assert (d0, z) in layers[1] and (d1, x) in layers[1]
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__, "-q"]))
+
